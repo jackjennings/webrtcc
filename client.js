@@ -1,26 +1,11 @@
 const signalhub = require("signalhub");
 const SimplePeer = require("simple-peer");
-const wrtc = require("wrtc");
-
-const id = "asdf1234";
-
-const peer = new SimplePeer({ wrtc, initiator: true });
+const webrtcSwarm = require("webrtc-swarm");
 
 const hub = signalhub("asdf", ["http://localhost:8080"]);
-const answer = hub.subscribe("answer");
+const swarm = webrtcSwarm(hub);
 
-peer.on("signal", offer => {
-  hub.broadcast("call", { offer, id });
-});
-
-peer.on("connect", () => {
-  console.log("connected");
-});
-
-peer.on("data", data => {
-  console.log(data);
-})
-
-answer.on("data", ({ offer }) => {
-  peer.signal(offer);
+swarm.on("peer", (peer, id) => {
+  console.log(id);
+  peer.on("data", data => console.log(data))
 });

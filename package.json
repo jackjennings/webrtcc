@@ -9,12 +9,14 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "browserify": "^16.2.2",
     "typescript": "^2.9.2"
   },
   "dependencies": {
     "kefir": "^3.8.3",
     "signalhub": "^4.9.0",
     "simple-peer": "^9.1.2",
+    "webrtc-swarm": "^2.9.0",
     "wrtc": "^0.1.6"
   }
 }
