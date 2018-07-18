@@ -5,17 +5,21 @@ const SimplePeer = require("simple-peer");
 const webrtcSwarm = require("webrtc-swarm");
 const wrtc = require("wrtc");
 
-const feed = hypercore("./storage", { valueEncoding: "utf-8" });
+const hubUrls = ["http://localhost:8000"];
+const feed = hypercore("./storage");
 
-const hub = signalhub("asdf", ["http://localhost:8080"]);
-const swarm = webrtcSwarm(hub, { wrtc });
+feed.on("ready", () => {
+  console.log(feed.key.toString('hex'));
 
-swarm.on("connect", (peer, id) => {
-  console.log("connected to: ", id);
-  pump(peer, feed.replicate({ live: true }), peer);
+  const append = feed.createWriteStream();
+  const hub = signalhub(feed.discoveryKey.toString("hex"), hubUrls);
+  const swarm = webrtcSwarm(hub, { wrtc });
+
+  process.stdin.resume();
+  // pump(process.stdin, append);
+
+  // swarm.on("connect", (peer, id) => {
+  //   console.log("connected to: ", id);
+  //   pump(peer, feed.replicate({ live: true }), peer, err => console.error(err));
+  // });
 });
-
-setInterval(() => {
-  console.log("append");
-  feed.append("hello");
-}, 1000);

@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "hypercore": "^6.17.3",
+    "hypercore-video-segmenter": "^1.0.0",
     "pump": "^3.0.0",
     "random-access-memory": "^3.0.0",
     "signalhub": "^4.9.0",
