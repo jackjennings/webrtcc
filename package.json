@@ -4,22 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "watch": "watchify client.js -o bundle.js",
     "compile": "browserify client.js -o bundle.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "browserify": "^16.2.2"
+    "browserify": "^16.2.2",
+    "watchify": "^3.11.0"
   },
   "dependencies": {
+    "choppa": "^1.0.2",
     "hypercore": "^6.17.3",
-    "hypercore-video-segmenter": "^1.0.0",
+    "p-queue": "^3.0.0",
     "pump": "^3.0.0",
     "random-access-memory": "^3.0.0",
     "signalhub": "^4.9.0",
     "simple-peer": "^9.1.2",
     "webrtc-swarm": "^2.9.0",
-    "wrtc": "^0.1.6"
+    "wrtc": "^0.2.0"
   }
 }

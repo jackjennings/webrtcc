@@ -1,3 +1,5 @@
+const choppa = require("choppa");
+const fs = require("fs");
 const hypercore = require("hypercore");
 const pump = require("pump");
 const signalhub = require("signalhub");
@@ -5,21 +7,29 @@ const SimplePeer = require("simple-peer");
 const webrtcSwarm = require("webrtc-swarm");
 const wrtc = require("wrtc");
 
-const hubUrls = ["http://localhost:8000"];
-const feed = hypercore("./storage");
+const hubUrls = ["https://api.signal.sistercitynyc.com"];
+const feed = hypercore("./storage/content", {
+  overwrite: true
+});
+
+const blockSize = 16 * 1024; // 16kb
 
 feed.on("ready", () => {
-  console.log(feed.key.toString('hex'));
+  console.log("Broadcasting from:", feed.key.toString("hex"));
 
-  const append = feed.createWriteStream();
   const hub = signalhub(feed.discoveryKey.toString("hex"), hubUrls);
-  const swarm = webrtcSwarm(hub, { wrtc });
+  const sw = webrtcSwarm(hub, { wrtc });
+  const content = fs.createReadStream("./test.mp4");
 
-  process.stdin.resume();
-  // pump(process.stdin, append);
+  const chunks = pump(content, choppa(blockSize));
 
-  // swarm.on("connect", (peer, id) => {
-  //   console.log("connected to: ", id);
-  //   pump(peer, feed.replicate({ live: true }), peer, err => console.error(err));
-  // });
+  chunks.on("data", d => {
+    feed.append(d);
+  });
+
+  sw.on("peer", function(conn) {
+    console.log("peer");
+
+    pump(conn, feed.replicate({ live: true }), conn, console.error);
+  });
 });

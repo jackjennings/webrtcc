@@ -1,37 +1,55 @@
+const hypercore = require("hypercore");
+const PromiseQueue = require("p-queue");
 const pump = require("pump");
+const ram = require("random-access-memory");
 const signalhub = require("signalhub");
 const SimplePeer = require("simple-peer");
 const webrtcSwarm = require("webrtc-swarm");
 
-const hypercore = require("hypercore");
-const ram = require("random-access-memory");
+const videoMimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
+const hubUrls = ["https://api.signal.sistercitynyc.com"];
+const key = window.location.search.substring(1);
 
-const feed = hypercore(() => ram(), { valueEncoding: "utf-8" });
+const feed = hypercore(ram, key);
+const queue = new PromiseQueue({ concurrency: 1 });
+const myMediaSource = new MediaSource();
+const url = URL.createObjectURL(myMediaSource);
 
-const hub = signalhub("asdf", ["http://localhost:8080"]);
-const swarm = webrtcSwarm(hub);
+feed.on("ready", () => {
+  console.log("Connecting to:", feed.key.toString("hex"));
 
-swarm.on("peer", (peer, id) => {
-  console.log("connected to: ", id);
-  if (id !== swarm.me) {
-    pump(peer, feed.replicate({ live: true }), peer);
-  }
+  const hub = signalhub(feed.discoveryKey.toString("hex"), hubUrls);
+  const swarm = webrtcSwarm(hub);
+
+  swarm.on("peer", conn => {
+    pump(conn, feed.replicate({ live: true }), conn, console.error);
+  });
 });
 
-// None of these ever log…
+myMediaSource.addEventListener("sourceopen", () => {
+  const videoSourceBuffer = myMediaSource.addSourceBuffer(videoMimeType);
 
-feed.on("append", () => console.log("appended"));
-feed.on("append", (index, data) => console.log("downloaded", data));
-feed.on("error", e => console.log(e));
+  const read = feed.createReadStream({
+    live: true
+  });
 
-const stream = feed.createReadStream({
-  live: true,
-  tail: true
+  read.on("data", buffer => {
+    queue.add(
+      () =>
+        new Promise((resolve, reject) => {
+          const onUpdate = () => {
+            videoSourceBuffer.removeEventListener("updateend", onUpdate);
+            resolve();
+          };
+          videoSourceBuffer.addEventListener("updateend", onUpdate);
+          videoSourceBuffer.appendBuffer(buffer);
+        })
+    );
+  });
 });
 
-stream.on("data", d => console.log(d));
+document.addEventListener("DOMContentLoaded", () => {
+  const videoTag = document.getElementById("my-video");
 
-setInterval(() => {
-  console.log("Length: ", feed.length)
-  feed.head(d => console.log("Head: ", d));
-}, 1000);
+  videoTag.src = url;
+});
