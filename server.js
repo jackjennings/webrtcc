@@ -19,7 +19,7 @@ feed.on("ready", () => {
 
   const hub = signalhub(feed.discoveryKey.toString("hex"), hubUrls);
   const sw = webrtcSwarm(hub, { wrtc });
-  const content = fs.createReadStream("./test.mp4");
+  const content = createStream(process.argv[2]);
 
   const chunks = pump(content, choppa(blockSize));
 
@@ -33,3 +33,13 @@ feed.on("ready", () => {
     pump(conn, feed.replicate({ live: true }), conn, console.error);
   });
 });
+
+function createStream(flag) {
+  switch (flag) {
+    case "--demo":
+      return fs.createReadStream("./test.mp4");
+      break;
+    default:
+      return process.stdin;
+  }
+}
